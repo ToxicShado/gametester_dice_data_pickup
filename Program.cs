@@ -9,12 +9,18 @@ namespace GrabDataFromGametester
             one_field data = new one_field();
             string line = "start";
             int money = 0;
+            bool in_progress = false;
             Console.WriteLine("Enter starting money: ");    
             Int32.TryParse(Console.ReadLine(), out money);
             Console.WriteLine($"Starting money: {money}");  
             while (line != "exit")
             {
                 line = Console.ReadLine();
+
+                if(line.Contains("reset".ToLower()) || line.Contains("flag".ToLower()))
+                {
+                    in_progress = false;
+                }
 
                 if (line.Contains("restart".ToLower()))
                 {
@@ -60,10 +66,11 @@ namespace GrabDataFromGametester
                             Console.WriteLine($"Extracted number: {number}");
                             data.timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                             data.bet = (int)number;
+                            in_progress = true;
                         }
                     }
                     var player = Regex.Match(line, @"\btoxicshado gets (\d+) and (\d+)");
-                    if (player.Success)
+                    if (player.Success && in_progress)
                     {
                         // Extract the numbers
                         if (Int64.TryParse(player.Groups[1].Value, out long number1) && Int64.TryParse(player.Groups[2].Value, out long number2))
@@ -75,7 +82,7 @@ namespace GrabDataFromGametester
                         }
                     }
                     var opponent = Regex.Match(line, @"\btoxicshado, your opponent throws their dice\.\.\. and gets (\d+) and (\d+)");
-                    if (opponent.Success)
+                    if (opponent.Success && in_progress)
                     {
                         // Extract the opponent's numbers
                         if (Int64.TryParse(opponent.Groups[1].Value, out long opponentVal1) && Int64.TryParse(opponent.Groups[2].Value, out long opponentVal2))
@@ -87,7 +94,7 @@ namespace GrabDataFromGametester
                     }
 
                     var sixes = Regex.Match(line, @"\btoxicshado rolls two (\d+)s!.*?won ([\d,]+)");
-                    if (sixes.Success)
+                    if (sixes.Success && in_progress)
                     {
                         // Extract the rolled number and winning amount
                         if (Int64.TryParse(sixes.Groups[2].Value.Replace(",", ""), out long winningAmount))
@@ -106,7 +113,7 @@ namespace GrabDataFromGametester
                     }
 
                     var win = Regex.Match(line, @"\btoxicshado, you won ([\d,]+)");
-                    if (win.Success)
+                    if (win.Success && in_progress)
                     {
                         // Extract the winning amount
                         if (Int64.TryParse(win.Groups[1].Value.Replace(",", ""), out long winningAmount))
@@ -118,7 +125,7 @@ namespace GrabDataFromGametester
                     }
 
                     var lose = Regex.Match(line, @"\btoxicshado, you lost ([\d,]+)");
-                    if (lose.Success)
+                    if (lose.Success && in_progress)
                     {
                         // Extract the winning amount
                         if (Int64.TryParse(lose.Groups[1].Value.Replace(",", ""), out long loseAmmount))
@@ -130,7 +137,7 @@ namespace GrabDataFromGametester
                     }
 
                     var draw = Regex.Match(line, @"\btoxicshado, it's a draw, you get back ([\d,]+)");
-                    if (draw.Success)
+                    if (draw.Success && in_progress)
                     {
                         // Extract the winning amount
                         if (Int64.TryParse(draw.Groups[1].Value.Replace(",", ""), out long drawAmmount))
@@ -156,6 +163,7 @@ namespace GrabDataFromGametester
                             Console.WriteLine($"Data written to file: {money},{data.timestamp},{data.bet},{data.player_val1},{data.player_val2},{data.opponent_val1},{data.opponent_val2},{data.total},{data.status}");
                         }
                         data = new one_field();
+                        in_progress = false;
                     }
                 }
             }
