@@ -130,6 +130,7 @@ namespace GrabDataFromGametester
                             file.WriteLine($"{money} {data.timestamp},{data.bet},{data.player_val1},{data.player_val2},{data.opponent_val1},{data.opponent_val2},{data.total},{data.status}");
                             Console.WriteLine($"Data written to file: {money},{data.timestamp},{data.bet},{data.player_val1},{data.player_val2},{data.opponent_val1},{data.opponent_val2},{data.total},{data.status}");
                         }
+                        data = new one_field();
                     }
                 }
             }
