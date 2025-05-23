@@ -22,11 +22,11 @@ namespace GrabDataFromGametester
                 
                 if (line != null)
                 {
-                    var bet = Regex.Match(line, @"\btoxicshado bets (\d+)");
+                    var bet = Regex.Match(line, @"\btoxicshado bets ([\d,]+)");
                     if (bet.Success)
                     {
                         // Extract the number
-                        if (Int64.TryParse(bet.Groups[1].Value, out long number))
+                        if (Int64.TryParse(bet.Groups[1].Value.Replace(",", ""), out long number))
                         {
                             Console.WriteLine($"Extracted number: {number}");
                             data.timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
@@ -76,7 +76,7 @@ namespace GrabDataFromGametester
                         }
                     }
 
-                    var win = Regex.Match(line, @"\btoxicshado, you won ([\d]+)");
+                    var win = Regex.Match(line, @"\btoxicshado, you won ([\d,]+)");
                     if (win.Success)
                     {
                         // Extract the winning amount
@@ -88,7 +88,7 @@ namespace GrabDataFromGametester
                         }
                     }
 
-                    var lose = Regex.Match(line, @"\btoxicshado, you lost ([\d]+)");
+                    var lose = Regex.Match(line, @"\btoxicshado, you lost ([\d,]+)");
                     if (lose.Success)
                     {
                         // Extract the winning amount
@@ -100,7 +100,7 @@ namespace GrabDataFromGametester
                         }
                     }
 
-                    var draw = Regex.Match(line, @"\btoxicshado, it's a draw, you get back ([\d]+)");
+                    var draw = Regex.Match(line, @"\btoxicshado, it's a draw, you get back ([\d,]+)");
                     if (draw.Success)
                     {
                         // Extract the winning amount
@@ -113,10 +113,22 @@ namespace GrabDataFromGametester
 
                     if(win.Success || draw.Success || lose.Success || sixes.Success)
                     {
+                        if(File.Exists("data.txt"))
+                        {
+                            Console.WriteLine("File exists.");
+                        }
+                        else
+                        {
+                            Console.WriteLine("File does not exist.");
+                            using (var file = File.CreateText("data.txt"))
+                            {
+                                file.WriteLine("current_money,timestamp,bet,player_val1,player_val2,opponent_val1,opponent_val2,total,status");
+                            }
+                        }
                         using (var file = File.AppendText("data.txt"))
                         {
                             file.WriteLine($"{data.timestamp},{data.bet},{data.player_val1},{data.player_val2},{data.opponent_val1},{data.opponent_val2},{data.total},{data.status}");
-                            Console.WriteLine($"Data written to file: {data.timestamp},{data.bet},{data.player_val1},{data.player_val2},{data.opponent_val1},{data.opponent_val2},{data.total},{data.status}");
+                            Console.WriteLine($"Data written to file: {money},{data.timestamp},{data.bet},{data.player_val1},{data.player_val2},{data.opponent_val1},{data.opponent_val2},{data.total},{data.status}");
                         }
                     }
                 }
