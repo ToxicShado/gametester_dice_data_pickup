@@ -106,10 +106,21 @@ namespace GrabDataFromGametester
                             data.opponent_val2 = -1;
 
                             money += (int)winningAmount;
-                            data.total = (int)winningAmount + data.bet;
+                            data.total = (int)winningAmount;
                             data.status = 3; // two sixes
                             Console.WriteLine($"Rolled two sixes! Winning amount: {winningAmount}");
                         }
+                    }
+                    // toxicshado, you rolled a double and won twice your bet: 2,000 :GTface1:
+                    var doubles = Regex.Match(line, @"\btoxicshado.+ double .+ bet: ([\d,]+)");
+                    if (doubles.Success && in_progress)
+                    {
+                        if (Int64.TryParse(doubles.Groups[1].Value.Replace(",", ""), out long winningAmount))
+                        {
+                            data.total = (int)winningAmount;
+                            money += (int)winningAmount;
+                            data.status = 2; // doubles
+                        } 
                     }
 
                     var win = Regex.Match(line, @"\btoxicshado, you won ([\d,]+)");
@@ -118,7 +129,7 @@ namespace GrabDataFromGametester
                         // Extract the winning amount
                         if (Int64.TryParse(win.Groups[1].Value.Replace(",", ""), out long winningAmount))
                         {
-                            data.total = (int)winningAmount + data.bet;
+                            data.total = (int)winningAmount;
                             money += (int)winningAmount;
                             data.status = 1; // win
                         }
@@ -139,15 +150,11 @@ namespace GrabDataFromGametester
                     var draw = Regex.Match(line, @"\btoxicshado, it's a draw, you get back ([\d,]+)");
                     if (draw.Success && in_progress)
                     {
-                        // Extract the winning amount
-                        if (Int64.TryParse(draw.Groups[1].Value.Replace(",", ""), out long drawAmmount))
-                        {
-                            data.total = (int)drawAmmount;
-                            data.status = 0; // draw
-                        }
+                        data.total = data.bet;
+                        data.status = 0; // draw   
                     }
 
-                    if(win.Success || draw.Success || lose.Success || sixes.Success)
+                    if(win.Success || draw.Success || lose.Success || sixes.Success || doubles.Success)
                     {
                         if(!File.Exists("data.txt"))
                         {
