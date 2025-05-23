@@ -16,8 +16,37 @@ namespace GrabDataFromGametester
             {
                 line = Console.ReadLine();
 
+                if (line.Contains("restart".ToLower()))
+                {
+                    Console.WriteLine("Enter starting money: ");
+                    Int32.TryParse(Console.ReadLine(), out money);
+                    Console.WriteLine($"Starting money: {money}");
+                }
+
+                if (line.Contains("deleteone".ToLower()))
+                {
+                    if (File.Exists("data.txt"))
+                    {
+                        var lines = File.ReadAllLines("data.txt").ToList();
+                        if (lines.Count > 1) // Ensure there's more than just the header
+                        {
+                            lines.RemoveAt(lines.Count - 1); // Remove the last line
+                            File.WriteAllLines("data.txt", lines); // Overwrite the file
+                            Console.WriteLine("Last line deleted.");
+                        }
+                        else
+                        {
+                            Console.WriteLine("No data to delete.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("File does not exist.");
+                    }
+                }
+
                 if (line.Contains("status".ToLower())) { 
-                Console.WriteLine($"Current money: {money}");
+                    Console.WriteLine($"Current money: {money}");
                 }
                 
                 if (line != null)
