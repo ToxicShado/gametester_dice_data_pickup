@@ -92,11 +92,11 @@ namespace GrabDataFromGametester
                     if (lose.Success)
                     {
                         // Extract the winning amount
-                        if (Int64.TryParse(win.Groups[1].Value.Replace(",", ""), out long loseAmmount))
+                        if (Int64.TryParse(lose.Groups[1].Value.Replace(",", ""), out long loseAmmount))
                         {
-                            data.total = -(int)loseAmmount;
-                            money -= (int)loseAmmount;
-                            data.status = 0; // win
+                            data.total = (int)loseAmmount * -1;
+                            money = money + data.total;
+                            data.status = -1; // lose
                         }
                     }
 
@@ -107,17 +107,13 @@ namespace GrabDataFromGametester
                         if (Int64.TryParse(draw.Groups[1].Value.Replace(",", ""), out long drawAmmount))
                         {
                             data.total = (int)drawAmmount;
-                            data.status = -1; // draw
+                            data.status = 0; // draw
                         }
                     }
 
                     if(win.Success || draw.Success || lose.Success || sixes.Success)
                     {
-                        if(File.Exists("data.txt"))
-                        {
-                            Console.WriteLine("File exists.");
-                        }
-                        else
+                        if(!File.Exists("data.txt"))
                         {
                             Console.WriteLine("File does not exist.");
                             using (var file = File.CreateText("data.txt"))
@@ -147,7 +143,7 @@ namespace GrabDataFromGametester
         public int opponent_val1;
         public int opponent_val2;
         public int total;
-        public int status; // -1 = draw, 0 = lose, 1 = win, 2 = double numbers win, 3 two sixes
+        public int status; // -1 = lose, 0 = draw, 1 = win, 2 = double numbers win, 3 two sixes
     }
     
 }
