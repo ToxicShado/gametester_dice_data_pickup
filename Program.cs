@@ -6,6 +6,19 @@ namespace GrabDataFromGametester
     {
         static void Main(string[] args)
         {
+            int five = 0;
+            List<int> last_bets = new List<int>();
+            List<int> last_plays = new List<int>();
+
+            double last_bets_sum = 0;
+            double last_plays_sum = 0;
+
+            for (int i = 0; i<5;i++)
+            {
+                last_bets.Add(0);
+                last_plays.Add(0);
+            }
+
             one_field data = new one_field();
             string line = "start";
             int money = 0;
@@ -70,7 +83,7 @@ namespace GrabDataFromGametester
 
                 if (line.Contains("statuscount".ToLower()))
                 {
-                    PrintStatusSummary(money);
+                    PrintStatusSummary(money,last_bets_sum,last_plays_sum);
                 }
 
                 if (line != null)
@@ -186,9 +199,25 @@ namespace GrabDataFromGametester
                         {
                             file.WriteLine($"{money},{data.timestamp},{data.bet},{data.player_val1},{data.player_val2},{data.opponent_val1},{data.opponent_val2},{data.total},{data.status}");
                             Console.WriteLine($"Data written to file: {money},{data.timestamp},{data.bet},{data.player_val1},{data.player_val2},{data.opponent_val1},{data.opponent_val2},{data.total},{data.status}");
-                            
                         }
-                        PrintStatusSummary(money);
+
+
+                        five = (five+1)%5;
+                        last_bets[five % 5] = data.bet;
+                        last_plays[five % 5] = data.total;
+
+                        last_bets_sum = 0;
+                        last_plays_sum = 0;
+                        for (int i = 0; i < 5; i++)
+                        {
+                            last_bets_sum += last_bets[i];
+                            last_plays_sum += last_plays[i];
+                        }
+
+                        last_bets_sum /= 5;
+                        last_plays_sum /= 5;
+
+                        PrintStatusSummary(money, last_bets_sum, last_plays_sum);
                         data = new one_field();
                         in_progress = false;
                     }
@@ -199,7 +228,7 @@ namespace GrabDataFromGametester
 
 
 
-        public static void PrintStatusSummary(int money)
+        public static void PrintStatusSummary(int money, double last_bets, double last_plays)
         {
             const string fileName = "data.csv";
             if (!File.Exists(fileName))
@@ -244,7 +273,7 @@ namespace GrabDataFromGametester
             }
 
             Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine($"Current Money : {money}; Running total : {runningTotal}; \nLoss:{losses}; Draw:{draws}; Win:{wins}; Double:{doubleWins}; Sixes:{twoSixes}");
+            Console.WriteLine($"Current Money : {money}; With and average bet (over the last 5 bets) of {last_bets} and avg winings {last_plays}\nLosses:{losses}; Draws:{draws}; Wins:{wins}; Doubles:{doubleWins}; Sixes:{twoSixes}");
             Console.WriteLine($"");
             Console.ResetColor();
         }
