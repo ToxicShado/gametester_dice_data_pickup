@@ -10,14 +10,26 @@ namespace GrabDataFromGametester
             string line = "start";
             int money = 0;
             bool in_progress = false;
-            Console.WriteLine("Enter starting money: ");    
-            Int32.TryParse(Console.ReadLine(), out money);
-            Console.WriteLine($"Starting money: {money}");  
+            Console.WriteLine("Enter starting money: ");
+            string? money_str = Console.ReadLine();
+            if(string.IsNullOrEmpty(money_str))
+            {
+                money = ReadLastMoneyStatus();
+                Console.WriteLine($"Starting money: {money} (from last status)");
+            }
+            else
+            {
+                money_str = money_str.Trim();
+                Int32.TryParse(money_str, out money);
+                Console.WriteLine($"Starting money: {money}");
+            }
+
+
             while (line != "exit")
             {
                 line = Console.ReadLine();
 
-                if(line.Contains("reset".ToLower()) || line.Contains("flag".ToLower()))
+                if (line.Contains("reset".ToLower()) || line.Contains("flag".ToLower()))
                 {
                     in_progress = false;
                 }
@@ -31,13 +43,13 @@ namespace GrabDataFromGametester
 
                 if (line.Contains("deleteone".ToLower()))
                 {
-                    if (File.Exists("data.txt"))
+                    if (File.Exists("data.csv"))
                     {
-                        var lines = File.ReadAllLines("data.txt").ToList();
+                        var lines = File.ReadAllLines("data.csv").ToList();
                         if (lines.Count > 1) // Ensure there's more than just the header
                         {
                             lines.RemoveAt(lines.Count - 1); // Remove the last line
-                            File.WriteAllLines("data.txt", lines); // Overwrite the file
+                            File.WriteAllLines("data.csv", lines); // Overwrite the file
                             Console.WriteLine("Last line deleted.");
                         }
                         else
@@ -51,10 +63,16 @@ namespace GrabDataFromGametester
                     }
                 }
 
-                if (line.Contains("status".ToLower())) { 
+                if (line.Contains("status".ToLower()))
+                {
                     Console.WriteLine($"Current money: {money}");
                 }
-                
+
+                if (line.Contains("statuscount".ToLower()))
+                {
+                    PrintStatusSummary(money);
+                }
+
                 if (line != null)
                 {
                     var bet = Regex.Match(line, @"\btoxicshado bets ([\d,]+)");
@@ -120,7 +138,7 @@ namespace GrabDataFromGametester
                             data.total = (int)winningAmount;
                             money += (int)winningAmount;
                             data.status = 2; // doubles
-                        } 
+                        }
                     }
 
                     var win = Regex.Match(line, @"\btoxicshado, you won ([\d,]+)");
@@ -154,40 +172,137 @@ namespace GrabDataFromGametester
                         data.status = 0; // draw   
                     }
 
-                    if(win.Success || draw.Success || lose.Success || sixes.Success || doubles.Success)
+                    if (win.Success || draw.Success || lose.Success || sixes.Success || doubles.Success)
                     {
-                        if(!File.Exists("data.txt"))
+                        if (!File.Exists("data.csv"))
                         {
                             Console.WriteLine("File does not exist.");
-                            using (var file = File.CreateText("data.txt"))
+                            using (var file = File.CreateText("data.csv"))
                             {
                                 file.WriteLine("current_money,timestamp,bet,player_val1,player_val2,opponent_val1,opponent_val2,total,status");
                             }
                         }
-                        using (var file = File.AppendText("data.txt"))
+                        using (var file = File.AppendText("data.csv"))
                         {
-                            file.WriteLine($"{money} {data.timestamp},{data.bet},{data.player_val1},{data.player_val2},{data.opponent_val1},{data.opponent_val2},{data.total},{data.status}");
+                            file.WriteLine($"{money},{data.timestamp},{data.bet},{data.player_val1},{data.player_val2},{data.opponent_val1},{data.opponent_val2},{data.total},{data.status}");
                             Console.WriteLine($"Data written to file: {money},{data.timestamp},{data.bet},{data.player_val1},{data.player_val2},{data.opponent_val1},{data.opponent_val2},{data.total},{data.status}");
+                            
                         }
+                        PrintStatusSummary(money);
                         data = new one_field();
                         in_progress = false;
                     }
                 }
             }
         }
-    }
 
 
-    struct one_field
-    {
-        public string timestamp;
-        public int bet;
-        public int player_val1;
-        public int player_val2;
-        public int opponent_val1;
-        public int opponent_val2;
-        public int total;
-        public int status; // -1 = lose, 0 = draw, 1 = win, 2 = double numbers win, 3 two sixes
+
+
+        public static void PrintStatusSummary(int money)
+        {
+            const string fileName = "data.csv";
+            if (!File.Exists(fileName))
+            {
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.WriteLine("File does not exist.");
+                Console.ResetColor();
+                return;
+            }
+
+            var lines = File.ReadAllLines(fileName);
+            if (lines.Length <= 1)
+            {
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.WriteLine("No data to summarize.");
+                Console.ResetColor();
+                return;
+            }
+
+            int runningTotal = 0;
+            int losses = 0, draws = 0, wins = 0, doubleWins = 0, twoSixes = 0;
+
+            for (int i = 1; i < lines.Length; i++)
+            {
+                var line = lines[i];
+                var parts = line.Split(',');
+                if (parts.Length < 9)
+                    continue; // skip malformed lines
+
+                if (int.TryParse(parts[8], out int status))
+                {
+                    runningTotal += status;
+                    switch (status)
+                    {
+                        case -1: losses++; break;
+                        case 0: draws++; break;
+                        case 1: wins++; break;
+                        case 2: doubleWins++; break;
+                        case 3: twoSixes++; break;
+                    }
+                }
+            }
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"Current Money : {money}; Running total : {runningTotal}; \nLoss:{losses}; Draw:{draws}; Win:{wins}; Double:{doubleWins}; Sixes:{twoSixes}");
+            Console.WriteLine($"");
+            Console.ResetColor();
+        }
+
+        public static int ReadLastMoneyStatus()
+        {
+            const string fileName = "data.csv";
+            if (!File.Exists(fileName))
+            {
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.WriteLine("File does not exist.");
+                Console.ResetColor();
+                return 0;
+            }
+
+            var lines = File.ReadAllLines(fileName);
+            if (lines.Length <= 1)
+            {
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.WriteLine("No data in file.");
+                Console.ResetColor();
+                return 0;
+            }
+
+            // Find the last non-empty line (skip header)
+            for (int i = lines.Length - 1; i > 0; i--)
+            {
+                var line = lines[i].Trim();
+                if (!string.IsNullOrEmpty(line))
+                {
+                    var parts = line.Split(',');
+                    if (parts.Length > 0 && int.TryParse(parts[0], out int lastMoney))
+                    {
+                        Console.ForegroundColor = ConsoleColor.Blue;
+                        Console.WriteLine($"Last money status: {lastMoney}");
+                        Console.ResetColor();
+                        return lastMoney;
+                    }
+                }
+            }
+
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine("No valid money status found.");
+            Console.ResetColor();
+            return 0;
+        }
+
+        struct one_field
+        {
+            public string timestamp;
+            public int bet;
+            public int player_val1;
+            public int player_val2;
+            public int opponent_val1;
+            public int opponent_val2;
+            public int total;
+            public int status; // -1 = lose, 0 = draw, 1 = win, 2 = double numbers win, 3 two sixes
+        }
+
     }
-    
 }
