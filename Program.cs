@@ -184,43 +184,43 @@ namespace GrabDataFromGametester
                         data.total = data.bet;
                         data.status = 0; // draw   
                     }
-
-                    if (win.Success || draw.Success || lose.Success || sixes.Success || doubles.Success)
-                    {
-                        if (!File.Exists("data.csv"))
+                    if (in_progress)
+                        if (win.Success || draw.Success || lose.Success || sixes.Success || doubles.Success)
                         {
-                            Console.WriteLine("File does not exist.");
-                            using (var file = File.CreateText("data.csv"))
+                            if (!File.Exists("data.csv"))
                             {
-                                file.WriteLine("current_money,timestamp,bet,player_val1,player_val2,opponent_val1,opponent_val2,total,status");
+                                Console.WriteLine("File does not exist.");
+                                using (var file = File.CreateText("data.csv"))
+                                {
+                                    file.WriteLine("current_money,timestamp,bet,player_val1,player_val2,opponent_val1,opponent_val2,total,status");
+                                }
                             }
+                            using (var file = File.AppendText("data.csv"))
+                            {
+                                file.WriteLine($"{money},{data.timestamp},{data.bet},{data.player_val1},{data.player_val2},{data.opponent_val1},{data.opponent_val2},{data.total},{data.status}");
+                                Console.WriteLine($"Data written to file: {money},{data.timestamp},{data.bet},{data.player_val1},{data.player_val2},{data.opponent_val1},{data.opponent_val2},{data.total},{data.status}");
+                            }
+
+
+                            five = (five+1)%5;
+                            last_bets[five % 5] = data.bet;
+                            last_plays[five % 5] = data.total;
+
+                            last_bets_sum = 0;
+                            last_plays_sum = 0;
+                            for (int i = 0; i < 5; i++)
+                            {
+                                last_bets_sum += last_bets[i];
+                                last_plays_sum += last_plays[i];
+                            }
+
+                            last_bets_sum /= 5;
+                            last_plays_sum /= 5;
+
+                            PrintStatusSummary(money, last_bets_sum, last_plays_sum);
+                            data = new one_field();
+                            in_progress = false;
                         }
-                        using (var file = File.AppendText("data.csv"))
-                        {
-                            file.WriteLine($"{money},{data.timestamp},{data.bet},{data.player_val1},{data.player_val2},{data.opponent_val1},{data.opponent_val2},{data.total},{data.status}");
-                            Console.WriteLine($"Data written to file: {money},{data.timestamp},{data.bet},{data.player_val1},{data.player_val2},{data.opponent_val1},{data.opponent_val2},{data.total},{data.status}");
-                        }
-
-
-                        five = (five+1)%5;
-                        last_bets[five % 5] = data.bet;
-                        last_plays[five % 5] = data.total;
-
-                        last_bets_sum = 0;
-                        last_plays_sum = 0;
-                        for (int i = 0; i < 5; i++)
-                        {
-                            last_bets_sum += last_bets[i];
-                            last_plays_sum += last_plays[i];
-                        }
-
-                        last_bets_sum /= 5;
-                        last_plays_sum /= 5;
-
-                        PrintStatusSummary(money, last_bets_sum, last_plays_sum);
-                        data = new one_field();
-                        in_progress = false;
-                    }
                 }
             }
         }
